@@ -29,7 +29,7 @@ csc /target:exe BinarySearchTreeExample.cs BinarySearchTree.cs
 ```
 Or in Windows:
 ```
-csc /target:exe BinarySearchTreeExample.cs BinarySearchTree.cs
+csc.exe /target:exe BinarySearchTreeExample.cs BinarySearchTree.cs
 ```
 ### Usage
 See the BinarySearchTreeExample.cs source code for an example which provides a command line utility to Add, Remove and Delete integers in a BST, as well as print the BST in a readable format. The command line utility accepts four commands:
