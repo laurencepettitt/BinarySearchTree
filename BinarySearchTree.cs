@@ -1,140 +1,115 @@
-using System;
+using static System.Math;
+//using System.Diagnostics;
 
-interface ISet<T>
-{
-    bool Add(T val);  // Add a value.  Returns true if added, false if already present.
-    bool Remove(T Val);  // Remove a value.  Returns true if removed, false if not present.
-    bool Contains(T Val);  // Return true if a value is present in the set.
-}
+namespace Trees {
 
-class BinarySearchTree<T> : ISet<T> where T : IComparable<T>
-{
-    public class Node : IComparable<Node>
+  class BinarySearchTree<T> : ISet<T> where T : System.IComparable<T>
+  {
+    public class Node : System.IComparable<Node>
     {
-        public T Val;
-        public Node Parent;
-        public Node Left;
-        public Node Right;
-        
-        public Node(T val, Node parent)
-        {
-            this.Val = val;
-            this.Parent = parent;
-        }
-        
-        public int CompareTo(Node v) => this.Val.CompareTo(v.Val);
-        
-        string ToStringUtil(Node t, int height)
-        {
-            if ( t == null ) return "";
-            string s = "";
-            s += ToStringUtil(t.Right, height + 2);
-            s += new string (' ', height) + t.Val + '\n';
-            s += ToStringUtil( t.Left, height + 2);
-            return s;
-        }
-        
-        public override string ToString()
-            => ToStringUtil(this, 0);
+      public T Val;
+      public Node Left;
+      public Node Right;
+      public int Height;
+      
+      public Node(T val, int height) {
+        this.Val = val;
+        this.Height = height;
+      }
+      
+      public int CompareTo(Node v) => this.Val.CompareTo(v.Val);
+      
+      string ToStringUtil(Node t, int height)
+      {
+        if ( t == null ) return "";
+        string s = "";
+        s += ToStringUtil(t.Right, height + 2);
+        s += new string (' ', height) + t.Val;
+        //s += t.Val + " ";
+        //s += " (" + BalanceFactor(t) + ")";
+        s += "\n";
+        s += ToStringUtil( t.Left, height + 2);
+        return s;
+      }
+      
+      public override string ToString()
+        => ToStringUtil(this, 0);
     }
     
     Node Root;
+    public int Count = 0;
     
     public BinarySearchTree() { Root = null; }
     
     // Recursive utility to insert val into the Binary Search Tree.
-    // Once finished, out Node v will be the new root of BST.
-    bool AddUtil(ref Node currRoot, T val, Node parent = null)
+    // Once finished, ref Node currRoot will be the root of BST.
+    bool AddTo(ref Node root, T val)
     {
-        if ( currRoot == null ) 
-        {
-            currRoot = new Node(val, parent);
-            return true;
-        }
-        if ( val.CompareTo(currRoot.Val) < 0 )
-            return AddUtil(ref currRoot.Left, val, currRoot);
-        if ( val.CompareTo(currRoot.Val) > 0 ) 
-            return AddUtil(ref currRoot.Right, val, currRoot);
-        return false;
-    }
-    
-    // recursively looks for Node root where T root.Val == val
-    // if node found, out Node v equals it, else v = null
-    bool ContainsUtil(Node currRoot, T val, out Node v)
-    {
-        v = currRoot;
-        if ( currRoot == null ) 
-            return false;
-        if ( val.CompareTo(currRoot.Val) == 0 )
-            return true;
-        if ( val.CompareTo(currRoot.Val) < 0 )
-            return ContainsUtil(currRoot.Left, val, out v);
-        if ( val.CompareTo(currRoot.Val) > 0 )
-            return ContainsUtil(currRoot.Right, val, out v);
-        return false;
-    }
-    
-    // recursively looks for Node min where min has minimum value in tree
-    // if tree has at least one element then min exists,
-    // then out Node min equals it, else min = null
-    bool MinUtil(Node currRoot, out Node min)
-    {
-        min = currRoot;
-        if ( currRoot == null ) return false;
-        if ( currRoot.Left == null ) return true;
-        return MinUtil(currRoot.Left, out min);
-    }
-    
-    public bool Remove(T val, Node v = null)
-    {
-        bool found = true;
-        // need to find node v where v.Val == val
-        if ( v == null )
-            found = ContainsUtil(Root, val, out v);
-        
-        if ( !found ) return false;
-            
-        if ( v.Left == null || v.Right == null ) // v has 1 or no children
-        {
-            
-            // onlyChild is null if v has no children
-            // or the only child who is not null, if v has a child
-            Node onlyChild = v.Left ?? v.Right;
-            
-            if ( onlyChild != null ) // v has 1 child
-                onlyChild.Parent = v.Parent; // give child to grandparent
-                
-            if ( v == Root )
-            {
-                Root = onlyChild; // n.b. onlyChild may be null
-                return true; // we are done here
-            }
-            
-            // v is left child of it's parent
-            if ( v.Parent.Left.CompareTo(v) == 0 )
-                v.Parent.Left = onlyChild;
-            else // v is right child of it's parent
-                v.Parent.Right = onlyChild;
-        }
-        else // v has 2 children
-        {
-            MinUtil(v.Right, out Node min); // find min node on right
-            T minVal = min.Val; // let v = min
-            Remove(min); // recursion is ok as min has at most 1 child
-            v.Val = minVal;
-        }
+      bool result = true;
+      if ( root == null ) {
+        root = new Node(val, 1);
+        Count++;
         return true;
+      }
+      else if ( val.CompareTo(root.Val) < 0 )
+        result = AddTo(ref root.Left, val);
+      else if ( val.CompareTo(root.Val) > 0 )
+        result = AddTo(ref root.Right, val);
+      else
+        return false; // duplicates not allowed
+      return result;
+    }
+
+    public bool Add(T theVal) => AddTo(ref Root, theVal);
+    
+    // delete and return min val in tree rooted at root
+    T RemoveMin(ref Node root) {
+      if (root == null) throw new System.NullReferenceException();
+      if (root.Left == null) {
+        T min = root.Val;
+        root = root.Right;
+        return min;
+      } else
+        return RemoveMin(ref root.Left);
     }
     
-    public bool Add(T val) => AddUtil(ref Root, val);
+    bool RemoveFrom(ref Node root, T val) {
+      if ( root == null ) return false; // not found
+      bool result = false; // arbitrary initialisation
+      if ( val.CompareTo(root.Val) < 0 )
+        result = RemoveFrom(ref root.Left, val); // recurse left
+      else if ( val.CompareTo(root.Val) > 0 )
+        result = RemoveFrom(ref root.Right, val); // recurse right
+      else if ( val.CompareTo(root.Val) == 0 ) {
+        if (root.Left != null && root.Right != null) {
+          root.Val = RemoveMin(ref root.Right); // two children
+        } else root = root.Left ?? root.Right; // at most one child
+        result = true;
+        Count--;
+      }
+      if (root == null) return true; // deleted node had no children
+      return result;
+    }
     
-    public bool Remove(Node n) => Remove(n.Val, n);
+    public bool Remove(T val) => RemoveFrom(ref Root, val);
     
-    public bool Remove(T val) => Remove(val, null);
+    bool ContainsIn(Node root, T val, out Node v) {
+      v = root;
+      if ( root == null ) 
+          return false;
+      if ( val.CompareTo(root.Val) == 0 )
+          return true;
+      if ( val.CompareTo(root.Val) < 0 )
+          return ContainsIn(root.Left, val, out v);
+      if ( val.CompareTo(root.Val) > 0 )
+          return ContainsIn(root.Right, val, out v);
+      return false;
+    }
     
-    public bool Contains(T val)
-        => ContainsUtil(Root, val, out Node v);
+    public bool Contains(T val) => ContainsIn(Root, val, out Node v);
     
     public override string ToString()
-        => (Root == null) ? "" : Root.ToString();
+      => (Root == null) ? "" : Root.ToString();
+  }
+
 }
